@@ -97,6 +97,8 @@ node scripts\native-smoke.cjs
 
 报告分别记录私有工作集、全部进程工作集与私有提交内存。工作集相加包含共享页重复计算，不能当作独占物理内存；一分钟或十分钟测量也不能证明不存在长期泄漏。
 
+本机结果与测量限制见 [内存观察记录](docs/performance.md)。Windows 构建检查模板位于 [docs/windows-check.template.yml](docs/windows-check.template.yml)，当前仓库没有启用自动 Actions；需要启用时，可由具备工作流写入权限的维护者将模板放到 `.github/workflows`。
+
 ## 许可
 
 应用源码为 MIT；字体、图标与依赖保留各自的许可。品牌标识不因应用源码的 MIT 许可而获得额外商标授权。
