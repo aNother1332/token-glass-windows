@@ -1,0 +1,6 @@
+const fs=require('node:fs'),zlib=require('node:zlib');
+function crc(b){let n=0xffffffff;for(const c of b){n^=c;for(let i=0;i<8;i++)n=(n>>>1)^((n&1)?0xedb88320:0);}return(n^0xffffffff)>>>0;}
+function chunk(t,b){const type=Buffer.from(t),len=Buffer.alloc(4),sum=Buffer.alloc(4);len.writeUInt32BE(b.length);sum.writeUInt32BE(crc(Buffer.concat([type,b])));return Buffer.concat([len,type,b,sum]);}
+const size=256,pixels=Buffer.alloc((size*4+1)*size);for(let y=0;y<size;y++)for(let x=0;x<size;x++){const i=y*(size*4+1)+1+x*4,d=Math.hypot(x-127.5,y-127.5);pixels[i]=50;pixels[i+1]=142;pixels[i+2]=119;pixels[i+3]=d<119?255:0;if((x>=76&&x<=179&&y>=72&&y<=94)||(x>=115&&x<=139&&y>=90&&y<=185)){pixels[i]=pixels[i+1]=pixels[i+2]=255;pixels[i+3]=255;}}
+const ih=Buffer.alloc(13);ih.writeUInt32BE(size);ih.writeUInt32BE(size,4);ih[8]=8;ih[9]=6;const png=Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',ih),chunk('IDAT',zlib.deflateSync(pixels)),chunk('IEND',Buffer.alloc(0))]);fs.writeFileSync('ui/icon.png',png);
+const hdr=Buffer.alloc(22);hdr.writeUInt16LE(1,2);hdr.writeUInt16LE(1,4);hdr[6]=0;hdr[7]=0;hdr.writeUInt16LE(1,10);hdr.writeUInt16LE(32,12);hdr.writeUInt32LE(png.length,14);hdr.writeUInt32LE(22,18);fs.writeFileSync('ui/icon.ico',Buffer.concat([hdr,png]));

@@ -1,0 +1,19 @@
+{
+  "source": "Maple Mono CN v7.9",
+  "sourceURL": "https://github.com/subframe7536/maple-font/releases/tag/v7.9",
+  "requestedCodepoints": 432,
+  "fonts": [
+    {
+      "style": "Regular",
+      "glyphs": 623,
+      "ttfBytes": 279696,
+      "woff2Bytes": 111804
+    },
+    {
+      "style": "SemiBold",
+      "glyphs": 623,
+      "ttfBytes": 281132,
+      "woff2Bytes": 115380
+    }
+  ]
+}

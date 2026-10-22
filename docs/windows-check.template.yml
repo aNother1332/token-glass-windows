@@ -1,0 +1,32 @@
+name: Check Windows source
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.16.0'
+      - name: Prepare fixed D-drive workspace
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force D:\TOKSCALE | Out-Null
+          Get-ChildItem -LiteralPath $env:GITHUB_WORKSPACE -Force | Where-Object Name -ne '.git' | Copy-Item -Destination D:\TOKSCALE -Recurse -Force
+          New-Item -ItemType Directory -Force D:\TOKSCALE\temp | Out-Null
+      - name: Install and test
+        shell: pwsh
+        working-directory: D:\TOKSCALE\app
+        run: |
+          $env:TEMP='D:\TOKSCALE\temp'
+          $env:TMP=$env:TEMP
+          $env:npm_config_cache='D:\TOKSCALE\cache\npm'
+          $env:ELECTRON_CACHE='D:\TOKSCALE\cache\electron'
+          npm ci
+          node scripts\prepare-runtime.cjs
+          npm test
+          & D:\TOKSCALE\native\Build.ps1

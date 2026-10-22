@@ -1,0 +1,48 @@
+{
+  "name": "token-glass",
+  "version": "0.2.0",
+  "description": "Windows 上随回答启停的毛玻璃 Token 监控",
+  "author": "Token Glass",
+  "license": "MIT",
+  "main": "src/main.cjs",
+  "scripts": {
+    "start": "electron . --legacy --manual",
+    "test": "node --test test/*.test.cjs",
+    "build": "electron-builder --win dir --x64"
+  },
+  "devDependencies": {
+    "@electron/asar": "^4.3.1",
+    "@playwright/test": "^1.64.1",
+    "@tokscale/cli-win32-x64-msvc": "^4.20.0",
+    "electron": "^41.10.7",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "local.tokenglass.desktop",
+    "productName": "Token Glass",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "ui/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "vendor",
+        "to": "vendor"
+      }
+    ],
+    "directories": {
+      "output": "D:/TOKSCALE/build"
+    },
+    "win": {
+      "target": "dir",
+      "icon": "ui/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "electronDist": "node_modules/electron/dist"
+  },
+  "dependencies": {
+    "koffi": "^3.3.3"
+  }
+}

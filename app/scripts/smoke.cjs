@@ -1,0 +1,33 @@
+const{_electron:electron}=require('@playwright/test');
+const fs=require('node:fs');
+(async()=>{
+ const env={...process.env,TEMP:'D:\\TOKSCALE\\temp',TMP:'D:\\TOKSCALE\\temp'};delete env.ELECTRON_RUN_AS_NODE;
+ const options=process.env.TOKEN_GLASS_TEST_EXE?{executablePath:process.env.TOKEN_GLASS_TEST_EXE,args:['--legacy']}:{args:['.','--legacy','--manual']};
+ const application=await electron.launch({...options,cwd:'D:\\TOKSCALE\\app',env,timeout:30000});
+ application.process().stderr.on('data',b=>process.stderr.write(b));
+ application.process().on('exit',(code,signal)=>console.log('app exit',code,signal));
+ const page=await application.firstWindow();const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.waitForSelector('.stat-value');await page.waitForTimeout(1500);
+ fs.mkdirSync('D:/TOKSCALE/outputs',{recursive:true});
+ await page.screenshot({path:'D:/TOKSCALE/outputs/overview-light.png'});
+ const state=await page.evaluate(()=>window.tokenGlass.state());console.log(JSON.stringify({clients:state.graph?.summary?.clients,speeds:state.speeds?.map(s=>({source:s.source,rate:s.rate,method:s.method})),quotaSources:state.quotas?.map(q=>q.source),warnings:state.warnings},null,2));
+ for(const tab of ['models','trend','projects','sessions','activity','settings']){await page.locator(`[data-page="${tab}"]`).click();if(['projects','sessions'].includes(tab)){await page.locator('.table-card').waitFor({timeout:55000});console.log(tab,'rows',await page.locator('tbody tr').count());}await page.waitForTimeout(100);if(!await page.locator('h1').innerText())throw new Error('Missing page heading');}
+ await page.locator('[data-page="trend"]').click();await page.locator('[data-granularity="hourly"]').click();await page.getByRole('heading',{name:'今日每小时用量',exact:true}).waitFor({timeout:55000});
+ await page.locator('[data-page="settings"]').click();
+ await page.locator('[data-setting="theme"]').selectOption('dark');await page.waitForTimeout(200);
+ await page.locator('[data-page="overview"]').click();await page.screenshot({path:'D:/TOKSCALE/outputs/overview-dark.png'});
+ await page.evaluate(()=>window.tokenGlass.action('setting',{key:'expanded',value:false}));
+ await page.evaluate(()=>window.tokenGlass.action('show-widget'));
+ const widget=await application.waitForEvent('window');await widget.waitForSelector('.widget-number');await widget.waitForTimeout(300);
+ await widget.screenshot({path:'D:/TOKSCALE/outputs/widget-dark.png'});
+ const numberText=await widget.locator('.widget-number').innerText();if(!/\d+\.\d[万亿]/.test(numberText))throw new Error('Chinese token unit missing');
+ const badIcons=await widget.locator('img.app-icon').evaluateAll(imgs=>imgs.filter(i=>!i.complete||!i.naturalWidth).length);if(badIcons)throw new Error('Official app icon failed to load');
+ const layout=await widget.evaluate(()=>({footer:document.querySelector('.widget-foot').getBoundingClientRect().bottom,height:innerHeight}));if(layout.footer>layout.height-3)throw new Error('Widget footer clipped');
+ await widget.locator('[data-action="expand"]').click();await widget.waitForTimeout(250);
+ await widget.screenshot({path:'D:/TOKSCALE/outputs/widget-expanded.png'});
+ await page.locator('[data-page="settings"]').click();await page.locator('[data-setting="theme"]').selectOption('system');
+ const exit=new Promise(resolve=>application.process().once('exit',resolve));
+ await page.evaluate(()=>window.tokenGlass.action('quit')).catch(e=>{if(!e.message.includes('closed'))throw e;});
+ await exit;
+ console.log(JSON.stringify({uiErrors:errors,exited:true}));if(errors.length)process.exitCode=1;
+})().catch(e=>{console.error(e);process.exitCode=1;});
